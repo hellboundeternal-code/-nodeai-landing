@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node.AI — Universal AI Agent Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #00D4C8;
+    --teal-dim: #00A89E;
+    --teal-glow: rgba(0,212,200,0.15);
+    --bg: #04080F;
+    --bg2: #080E1A;
+    --bg3: #0C1525;
+    --text: #E8F4F4;
+    --muted: #6B8F8F;
+    --border: rgba(0,212,200,0.12);
+    --white: #ffffff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    background: var(--teal);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 40px; height: 40px;
+    border: 1px solid rgba(0,212,200,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease, width 0.3s ease, height 0.3s ease;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 24px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to bottom, rgba(4,8,15,0.95), transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--teal);
+    letter-spacing: -0.5px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-logo .dot {
+    width: 8px; height: 8px;
+    background: var(--teal);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 40px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--teal); }
+
+  .nav-cta {
+    background: transparent;
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    padding: 10px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .nav-cta:hover {
+    background: var(--teal);
+    color: var(--bg);
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 120px 48px 80px;
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,212,200,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,200,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 80%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(0,212,200,0.08) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .hero-orb {
+    position: absolute;
+    right: -100px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 700px; height: 700px;
+    opacity: 0.15;
+  }
+
+  .hero-orb circle {
+    fill: none;
+    stroke: var(--teal);
+    stroke-width: 0.5;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,212,200,0.08);
+    border: 1px solid rgba(0,212,200,0.2);
+    padding: 6px 16px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 32px;
+    animation: fadeInUp 0.8s ease forwards;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(52px, 7vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -3px;
+    margin-bottom: 24px;
+    animation: fadeInUp 0.8s 0.1s ease both;
+  }
+
+  .hero-title .line1 { display: block; color: var(--white); }
+  .hero-title .line2 { 
+    display: block; 
+    color: transparent;
+    -webkit-text-stroke: 1px var(--teal);
+    font-style: italic;
+    font-family: 'Instrument Serif', serif;
+  }
+  .hero-title .line3 { display: block; color: var(--teal); }
+
+  .hero-sub {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 480px;
+    margin-bottom: 48px;
+    animation: fadeInUp 0.8s 0.2s ease both;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    animation: fadeInUp 0.8s 0.3s ease both;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--teal);
+    color: var(--bg);
+    padding: 16px 32px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    cursor: none;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.1);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .btn-primary:hover::after { transform: translateX(0); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(0,212,200,0.3); }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    color: var(--text);
+    padding: 16px 32px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    cursor: none;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--teal); color: var(--teal); transform: translateY(-2px); }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    margin-top: 80px;
+    padding-top: 48px;
+    border-top: 1px solid var(--border);
+    animation: fadeInUp 0.8s 0.4s ease both;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    color: var(--teal);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* MARQUEE */
+  .marquee-section {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    overflow: hidden;
+    background: rgba(0,212,200,0.02);
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: 60px;
+    animation: marquee 20s linear infinite;
+    width: max-content;
+  }
+
+  .marquee-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .marquee-item span { color: var(--teal); }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* FEATURES */
+  .section {
+    padding: 120px 48px;
+    position: relative;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--teal);
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(36px, 4vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 16px;
+  }
+
+  .section-title em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--teal);
+    font-weight: 400;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-top: 80px;
+    border: 1px solid var(--border);
+  }
+
+  .feature-card {
+    background: var(--bg);
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--teal);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-card:hover { background: var(--bg2); }
+
+  .feature-icon {
+    width: 48px; height: 48px;
+    background: var(--teal-glow);
+    border: 1px solid rgba(0,212,200,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    font-size: 20px;
+  }
+
+  .feature-num {
+    position: absolute;
+    top: 24px; right: 32px;
+    font-family: 'Syne', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    color: rgba(0,212,200,0.06);
+    line-height: 1;
+  }
+
+  .feature-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: var(--white);
+  }
+
+  .feature-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  /* TERMINAL SECTION */
+  .terminal-section {
+    padding: 120px 48px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .terminal-window {
+    background: #0A0F1A;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .terminal-bar {
+    background: #111827;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .terminal-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  .t-red { background: #FF5F57; }
+  .t-yellow { background: #FFBD2E; }
+  .t-green { background: #28CA41; }
+
+  .terminal-title {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .terminal-body {
+    padding: 24px;
+    font-size: 13px;
+    line-height: 1.8;
+    min-height: 320px;
+  }
+
+  .t-prompt { color: var(--teal); }
+  .t-cmd { color: var(--white); }
+  .t-output { color: #6B8F8F; }
+  .t-success { color: #28CA41; }
+  .t-highlight { color: var(--teal); }
+
+  .t-line { display: block; }
+
+  .blink {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--teal);
+    vertical-align: middle;
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* CONNECTORS */
+  .connectors-section {
+    padding: 120px 48px;
+  }
+
+  .connectors-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-top: 60px;
+  }
+
+  .connector-chip {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 16px 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    transition: all 0.2s;
+    cursor: none;
+  }
+
+  .connector-chip:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: var(--teal-glow);
+    transform: translateY(-4px);
+  }
+
+  .connector-emoji { font-size: 22px; display: block; margin-bottom: 8px; }
+
+  /* PRICING */
+  .pricing-section {
+    padding: 120px 48px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-top: 60px;
+    border: 1px solid var(--border);
+  }
+
+  .pricing-card {
+    background: var(--bg);
+    padding: 40px 32px;
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  .pricing-card.featured {
+    background: var(--bg3);
+    border: 1px solid rgba(0,212,200,0.3);
+    margin: -1px;
+    z-index: 1;
+  }
+
+  .pricing-badge {
+    position: absolute;
+    top: -1px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--teal);
+    color: var(--bg);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 4px 16px;
+    text-transform: uppercase;
+  }
+
+  .pricing-plan {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .pricing-price {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 48px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .pricing-price sup {
+    font-size: 20px;
+    vertical-align: top;
+    margin-top: 8px;
+    color: var(--teal);
+  }
+
+  .pricing-price span {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .pricing-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pricing-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .pricing-features li {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pricing-features li::before {
+    content: '→';
+    color: var(--teal);
+    font-size: 12px;
+  }
+
+  .pricing-btn {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: none;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .pricing-card.featured .pricing-btn {
+    background: var(--teal);
+    color: var(--bg);
+    border-color: var(--teal);
+  }
+
+  .pricing-btn:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+
+  .pricing-card.featured .pricing-btn:hover {
+    background: var(--teal-dim);
+    color: var(--bg);
+  }
+
+  /* DOWNLOAD */
+  .download-section {
+    padding: 160px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .download-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(0,212,200,0.06) 0%, transparent 70%);
+  }
+
+  .download-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(48px, 6vw, 88px);
+    line-height: 0.95;
+    letter-spacing: -3px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .download-title .outline {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(0,212,200,0.4);
+  }
+
+  .download-sub {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto 48px;
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .download-buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .store-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 16px 28px;
+    text-decoration: none;
+    cursor: none;
+    transition: all 0.3s;
+    min-width: 200px;
+  }
+
+  .store-btn:hover {
+    border-color: var(--teal);
+    background: var(--teal-glow);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0,212,200,0.15);
+  }
+
+  .store-icon { font-size: 32px; }
+
+  .store-text-small {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .store-text-big {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--white);
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--teal);
+  }
+
+  .footer-copy {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 32px;
+  }
+
+  .footer-links a {
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--teal); }
+
+  /* ANIMATIONS */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    nav { padding: 20px 24px; }
+    .nav-links { display: none; }
+    .hero { padding: 100px 24px 60px; }
+    .hero-stats { gap: 24px; flex-wrap: wrap; }
+    .section { padding: 80px 24px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .terminal-section { grid-template-columns: 1fr; padding: 80px 24px; }
+    .connectors-grid { grid-template-columns: repeat(3, 1fr); }
+    .pricing-grid { grid-template-columns: 1fr 1fr; }
+    .download-section { padding: 100px 24px; }
+    footer { padding: 32px 24px; flex-direction: column; gap: 24px; text-align: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; }
+    body { cursor: auto; }
+    .cursor, .cursor-ring { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="dot"></div>
+    Node.AI
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#connectors">Connectors</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <a href="#download" class="nav-cta">Download</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+
+  <svg class="hero-orb" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="350" cy="350" r="300" opacity="0.3"/>
+    <circle cx="350" cy="350" r="240" opacity="0.4"/>
+    <circle cx="350" cy="350" r="180" opacity="0.5"/>
+    <circle cx="350" cy="350" r="120" opacity="0.6"/>
+    <circle cx="350" cy="350" r="60" opacity="0.8"/>
+    <circle cx="350" cy="350" r="20" fill="rgba(0,212,200,0.3)"/>
+    <line x1="50" y1="350" x2="650" y2="350" stroke="rgba(0,212,200,0.1)" stroke-width="0.5"/>
+    <line x1="350" y1="50" x2="350" y2="650" stroke="rgba(0,212,200,0.1)" stroke-width="0.5"/>
+    <line x1="138" y1="138" x2="562" y2="562" stroke="rgba(0,212,200,0.07)" stroke-width="0.5"/>
+    <line x1="562" y1="138" x2="138" y2="562" stroke="rgba(0,212,200,0.07)" stroke-width="0.5"/>
+  </svg>
+
+  <div class="hero-content">
+    <div class="hero-badge">Now Available on iOS & Android</div>
+
+    <h1 class="hero-title">
+      <span class="line1">Universal</span>
+      <span class="line2">AI Agent</span>
+      <span class="line3">Hub.</span>
+    </h1>
+
+    <p class="hero-sub">
+      Deploy intelligent agents. Automate everything.<br>
+      Connect 17+ apps. Control your desktop from your phone.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#download" class="btn-primary">
+        Get Node.AI
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#features" class="btn-secondary">
+        See How It Works
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">17+</div>
+        <div class="stat-label">App Connectors</div>
+      </div>
+      <div>
+        <div class="stat-num">6</div>
+        <div class="stat-label">AI Models</div>
+      </div>
+      <div>
+        <div class="stat-num">∞</div>
+        <div class="stat-label">Possibilities</div>
+      </div>
+      <div>
+        <div class="stat-num">Free</div>
+        <div class="stat-label">To Start</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <div class="marquee-item">GPT-4o <span>●</span></div>
+    <div class="marquee-item">Claude <span>●</span></div>
+    <div class="marquee-item">Gemini <span>●</span></div>
+    <div class="marquee-item">Gmail <span>●</span></div>
+    <div class="marquee-item">Slack <span>●</span></div>
+    <div class="marquee-item">GitHub <span>●</span></div>
+    <div class="marquee-item">Notion <span>●</span></div>
+    <div class="marquee-item">Stripe <span>●</span></div>
+    <div class="marquee-item">Discord <span>●</span></div>
+    <div class="marquee-item">Shopify <span>●</span></div>
+    <div class="marquee-item">HubSpot <span>●</span></div>
+    <div class="marquee-item">OpenClaw <span>●</span></div>
+    <!-- Duplicate for seamless loop -->
+    <div class="marquee-item">GPT-4o <span>●</span></div>
+    <div class="marquee-item">Claude <span>●</span></div>
+    <div class="marquee-item">Gemini <span>●</span></div>
+    <div class="marquee-item">Gmail <span>●</span></div>
+    <div class="marquee-item">Slack <span>●</span></div>
+    <div class="marquee-item">GitHub <span>●</span></div>
+    <div class="marquee-item">Notion <span>●</span></div>
+    <div class="marquee-item">Stripe <span>●</span></div>
+    <div class="marquee-item">Discord <span>●</span></div>
+    <div class="marquee-item">Shopify <span>●</span></div>
+    <div class="marquee-item">HubSpot <span>●</span></div>
+    <div class="marquee-item">OpenClaw <span>●</span></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">What It Does</div>
+  <h2 class="section-title">Built for the<br><em>next generation</em><br>of productivity.</h2>
+
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <div class="feature-num">01</div>
+      <div class="feature-icon">🤖</div>
+      <div class="feature-name">AI Agents</div>
+      <p class="feature-desc">Create custom agents powered by GPT-4o, Claude, or Gemini. Each agent remembers context, executes tasks, and works for you 24/7.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">02</div>
+      <div class="feature-icon">💬</div>
+      <div class="feature-name">Smart Chat</div>
+      <p class="feature-desc">Natural conversation that gets things done. Your agents understand intent, ask clarifying questions, and take real action.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">03</div>
+      <div class="feature-icon">🔗</div>
+      <div class="feature-name">17+ Connectors</div>
+      <p class="feature-desc">Seamlessly connect Gmail, Slack, GitHub, Notion, Discord, Shopify, HubSpot, Stripe, and more. Your entire stack, unified.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">04</div>
+      <div class="feature-icon">⚡</div>
+      <div class="feature-name">OpenClaw Terminal</div>
+      <p class="feature-desc">The most powerful feature. Give your AI agent direct desktop access. Write code, run commands, manage files — from your phone.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">05</div>
+      <div class="feature-icon">🔐</div>
+      <div class="feature-name">Secure by Design</div>
+      <p class="feature-desc">Enterprise-grade encryption. OAuth sign-in with 6 providers. Full permission control. Your data stays yours, always.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">06</div>
+      <div class="feature-icon">📱</div>
+      <div class="feature-name">Mobile First</div>
+      <p class="feature-desc">Designed for iOS and Android from the ground up. Full power in your pocket. Desktop automation from anywhere in the world.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TERMINAL -->
+<section class="terminal-section" id="openclaw">
+  <div class="reveal">
+    <div class="section-label">OpenClaw Terminal</div>
+    <h2 class="section-title">Your desktop.<br><em>In your pocket.</em></h2>
+    <p style="font-size:13px; color:var(--muted); line-height:1.8; margin-top:24px; max-width:420px;">
+      OpenClaw bridges your mobile AI agents with your desktop computer. Write real code, manage files, execute commands, and automate entire workflows — all from your phone.
+    </p>
+    <div style="margin-top:40px; display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; align-items:center; gap:16px; font-size:13px; color:var(--muted);">
+        <span style="color:var(--teal);">→</span> Real-time desktop control
+      </div>
+      <div style="display:flex; align-items:center; gap:16px; font-size:13px; color:var(--muted);">
+        <span style="color:var(--teal);">→</span> File system access
+      </div>
+      <div style="display:flex; align-items:center; gap:16px; font-size:13px; color:var(--muted);">
+        <span style="color:var(--teal);">→</span> Execute any terminal command
+      </div>
+      <div style="display:flex; align-items:center; gap:16px; font-size:13px; color:var(--muted);">
+        <span style="color:var(--teal);">→</span> AI-powered automation scripts
+      </div>
+    </div>
+  </div>
+
+  <div class="reveal">
+    <div class="terminal-window">
+      <div class="terminal-bar">
+        <div class="terminal-dot t-red"></div>
+        <div class="terminal-dot t-yellow"></div>
+        <div class="terminal-dot t-green"></div>
+        <div class="terminal-title">openclaw — node.ai terminal</div>
+      </div>
+      <div class="terminal-body">
+        <span class="t-line"><span class="t-prompt">node@ai</span><span class="t-output">:~$ </span><span class="t-cmd">openclaw connect</span></span>
+        <span class="t-line t-output">Establishing secure tunnel...</span>
+        <span class="t-line t-success">✓ Connected to desktop (MacBook Pro)</span>
+        <span class="t-line">&nbsp;</span>
+        <span class="t-line"><span class="t-prompt">node@ai</span><span class="t-output">:~$ </span><span class="t-cmd">ai "summarize my github PRs"</span></span>
+        <span class="t-line t-output">Fetching GitHub data via connector...</span>
+        <span class="t-line t-output">Processing with GPT-4o...</span>
+        <span class="t-line">&nbsp;</span>
+        <span class="t-line t-highlight">→ 3 open PRs found:</span>
+        <span class="t-line t-output">&nbsp;&nbsp;#142 — Auth refactor (needs review)</span>
+        <span class="t-line t-output">&nbsp;&nbsp;#138 — API rate limiting (approved)</span>
+        <span class="t-line t-output">&nbsp;&nbsp;#135 — Mobile fixes (merged ✓)</span>
+        <span class="t-line">&nbsp;</span>
+        <span class="t-line"><span class="t-prompt">node@ai</span><span class="t-output">:~$ </span><span class="blink"></span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONNECTORS -->
+<section class="connectors-section" id="connectors">
+  <div class="section-label">Integrations</div>
+  <h2 class="section-title">Connect <em>everything.</em></h2>
+
+  <div class="connectors-grid reveal">
+    <div class="connector-chip"><span class="connector-emoji">📧</span>Gmail</div>
+    <div class="connector-chip"><span class="connector-emoji">💬</span>Slack</div>
+    <div class="connector-chip"><span class="connector-emoji">🐙</span>GitHub</div>
+    <div class="connector-chip"><span class="connector-emoji">📝</span>Notion</div>
+    <div class="connector-chip"><span class="connector-emoji">💰</span>Stripe</div>
+    <div class="connector-chip"><span class="connector-emoji">🛍️</span>Shopify</div>
+    <div class="connector-chip"><span class="connector-emoji">🎮</span>Discord</div>
+    <div class="connector-chip"><span class="connector-emoji">📱</span>Telegram</div>
+    <div class="connector-chip"><span class="connector-emoji">🎯</span>HubSpot</div>
+    <div class="connector-chip"><span class="connector-emoji">📊</span>Airtable</div>
+    <div class="connector-chip"><span class="connector-emoji">🔷</span>Linear</div>
+    <div class="connector-chip"><span class="connector-emoji">⚡</span>Zapier</div>
+    <div class="connector-chip"><span class="connector-emoji">🗓️</span>Calendar</div>
+    <div class="connector-chip"><span class="connector-emoji">📞</span>Twilio</div>
+    <div class="connector-chip"><span class="connector-emoji">☁️</span>AWS</div>
+    <div class="connector-chip"><span class="connector-emoji">🔍</span>Search</div>
+    <div class="connector-chip"><span class="connector-emoji">🖥️</span>OpenClaw</div>
+    <div class="connector-chip"><span class="connector-emoji">➕</span>More Soon</div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">Start free.<br><em>Scale</em> as you grow.</h2>
+
+  <div class="pricing-grid reveal">
+    <div class="pricing-card">
+      <div class="pricing-plan">Free</div>
+      <div class="pricing-price"><sup>$</sup>0<span>/mo</span></div>
+      <p class="pricing-desc">Perfect for getting started with AI agents.</p>
+      <ul class="pricing-features">
+        <li>2 AI agents</li>
+        <li>Basic chat features</li>
+        <li>3 connectors</li>
+        <li>Community support</li>
+      </ul>
+      <a href="#download" class="pricing-btn">Get Started</a>
+    </div>
+
+    <div class="pricing-card featured">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-plan">Pro</div>
+      <div class="pricing-price"><sup>$</sup>29<span>/mo</span></div>
+      <p class="pricing-desc">For power users who want it all.</p>
+      <ul class="pricing-features">
+        <li>15 AI agents</li>
+        <li>All AI models</li>
+        <li>All 17+ connectors</li>
+        <li>OpenClaw Terminal</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="#download" class="pricing-btn">Get Pro</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="pricing-plan">Starter</div>
+      <div class="pricing-price"><sup>$</sup>9<span>/mo</span></div>
+      <p class="pricing-desc">For individuals scaling their workflow.</p>
+      <ul class="pricing-features">
+        <li>5 AI agents</li>
+        <li>3 AI models</li>
+        <li>10 connectors</li>
+        <li>Email support</li>
+      </ul>
+      <a href="#download" class="pricing-btn">Get Starter</a>
+    </div>
+
+    <div class="pricing-card">
+      <div class="pricing-plan">Enterprise</div>
+      <div class="pricing-price"><sup>$</sup>99<span>/mo</span></div>
+      <p class="pricing-desc">Unlimited everything for your team.</p>
+      <ul class="pricing-features">
+        <li>Unlimited agents</li>
+        <li>All models + API</li>
+        <li>Custom connectors</li>
+        <li>Dedicated support</li>
+        <li>SLA guarantee</li>
+      </ul>
+      <a href="#download" class="pricing-btn">Get Enterprise</a>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section class="download-section" id="download">
+  <div class="download-bg"></div>
+  <h2 class="download-title reveal">
+    <span class="outline">Download</span><br>
+    Node.AI<br>
+    <span class="outline">Today.</span>
+  </h2>
+  <p class="download-sub reveal">
+    Available on iOS and Android. Free to start. No credit card required.
+  </p>
+  <div class="download-buttons reveal">
+    <a href="https://apps.apple.com/app/node-ai/id6759987621" class="store-btn">
+      <span class="store-icon">🍎</span>
+      <div>
+        <div class="store-text-small">Download on the</div>
+        <div class="store-text-big">App Store</div>
+      </div>
+    </a>
+    <a href="https://play.google.com/store/apps/details?id=dev.getnode.app" class="store-btn">
+      <span class="store-icon">▶️</span>
+      <div>
+        <div class="store-text-small">Get it on</div>
+        <div class="store-text-big">Google Play</div>
+      </div>
+    </a>
+    <a href="https://multi-auth-dash.preview.emergentagent.com" class="store-btn">
+      <span class="store-icon">🌐</span>
+      <div>
+        <div class="store-text-small">Launch in</div>
+        <div class="store-text-big">Browser</div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Node.AI</div>
+  <div class="footer-links">
+    <a href="https://multi-auth-dash.preview.emergentagent.com/privacy">Privacy</a>
+    <a href="mailto:hellboundeternal@gmail.com">Contact</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <div class="footer-copy">© 2026 Ryan Berry. All rights reserved.</div>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mouseX = 0, mouseY = 0;
+  let ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    cursor.style.left = mouseX + 'px';
+    cursor.style.top = mouseY + 'px';
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.12;
+    ringY += (mouseY - ringY) * 0.12;
+    ring.style.left = ringX + 'px';
+    ring.style.top = ringY + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '20px';
+      cursor.style.height = '20px';
+      ring.style.width = '60px';
+      ring.style.height = '60px';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '12px';
+      cursor.style.height = '12px';
+      ring.style.width = '40px';
+      ring.style.height = '40px';
+    });
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  reveals.forEach(el => observer.observe(el));
+
+  // Smooth nav links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
